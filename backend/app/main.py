@@ -1,22 +1,34 @@
 """
 CivicShield Backend — FastAPI entry point.
 
-This file creates the FastAPI application and registers a single /health
-endpoint so we can verify the server starts correctly. Features will be
-added in later phases.
+Creates the FastAPI application, registers CORS middleware, and includes
+routers for each feature area. The /health endpoint is the top-level
+liveness probe; the clinic service lives under /clinic/*.
 """
+
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.clinic.router import router as clinic_router
+from app.diagnostics.router import router as diagnostics_router
+from app.simulator.router import router as simulator_router
+
+# Configure structured logging for the whole app
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(name)-28s | %(levelname)-5s | %(message)s",
+    datefmt="%H:%M:%S",
+)
+
 app = FastAPI(
     title="CivicShield",
     description="Safety-governed agentic AI for simulated clinic incident response",
-    version="0.1.0",
+    version="0.3.0",
 )
 
 # Allow the React dev server (port 5173) to call our API without CORS errors.
-# In production you'd lock this down; for local development this is fine.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -24,9 +36,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Routers ---
+app.include_router(clinic_router)
+app.include_router(simulator_router)
+app.include_router(diagnostics_router)
+
 
 @app.get("/health")
 def health_check():
-    """Simple liveness probe. Returns 200 with a status message."""
+    """Top-level liveness probe. Returns 200 with a status message."""
     return {"status": "ok", "service": "civicshield-backend"}
 
