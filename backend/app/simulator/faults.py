@@ -47,6 +47,9 @@ class FaultManager:
             self.fault_details[fault_type]["added_latency_ms"] = added_ms
             logger.warning("Injected fault: HIGH_LATENCY (+%d ms)", added_ms)
 
+        elif fault_type == FaultType.UNSAFE_PROPOSAL_SIM:
+            logger.warning("Injected fault: UNSAFE_PROPOSAL_SIM (adversarial/unsafe proposal simulation)")
+
     def reset(self) -> None:
         """Reset all active faults and return to golden baseline state."""
         self.active_faults.clear()

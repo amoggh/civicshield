@@ -97,6 +97,14 @@ export interface PlannerRecommendation {
   generated_at: string;
 }
 
+export interface ActionProposal {
+  action_type: string;
+  parameters: Record<string, unknown>;
+  rationale: string;
+  supporting_evidence: string[];
+  attempt_number: number;
+}
+
 export interface GovernorDecision {
   approved: boolean;
   action_type: string;
@@ -123,24 +131,38 @@ export interface VerificationResult {
   timestamp: string;
 }
 
+export type AutonomyMode = 'shadow' | 'supervised' | 'autonomous';
+
 export interface WorkflowTimelineEvent {
   timestamp: string;
-  stage: 'INTAKE' | 'DIAGNOSE' | 'PLAN' | 'SAFETY_CHECK' | 'EXECUTE' | 'VERIFY' | 'ESCALATE';
+  stage: 'INTAKE' | 'DIAGNOSE' | 'PLAN' | 'SAFETY_CHECK' | 'EXECUTE' | 'VERIFY' | 'ESCALATE' | 'SHADOW_CHECK' | 'SUPERVISED_GATE' | 'SUPERVISED_APPROVAL' | 'SUPERVISED_REJECTION';
   summary: string;
   details: Record<string, unknown>;
 }
 
 export interface WorkflowRunResponse {
-  status: 'SUCCESS' | 'ESCALATED' | 'RETRYING' | 'DIAGNOSING' | 'COMPLETED';
+  status: 'SUCCESS' | 'ESCALATED' | 'RETRYING' | 'DIAGNOSING' | 'COMPLETED' | 'SHADOW_EVALUATED' | 'AWAITING_APPROVAL';
+  autonomy_mode?: AutonomyMode;
   incident_description: string;
   attempt_count: number;
   hypothesis: string;
   planner_recommendation: PlannerRecommendation | null;
+  proposed_action?: ActionProposal | null;
   governor_decision: GovernorDecision | null;
   execution_result: ExecutionResult | null;
   verification_result: VerificationResult | null;
   timeline: WorkflowTimelineEvent[];
   completed_at: string;
+  awaiting_approval?: boolean;
+  human_approved?: boolean | null;
+  shadow_matches_expected?: boolean | null;
+  shadow_expected_action?: string | null;
+}
+
+export interface WorkflowResumeRequest {
+  approved: boolean;
+  rejection_reason?: string | null;
+  paused_state: Record<string, unknown>;
 }
 
 export interface AgentStatusResponse {

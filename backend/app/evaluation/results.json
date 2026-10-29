@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-29T17:26:14.945491Z",
+  "generated_at": "2026-10-29T18:01:25.790538Z",
   "sample_size": 4,
   "limitations": "Evaluation conducted in a synthetic local simulation environment with a bounded sample size (N=4 distinct scenario archetypes). Measures controlled incident response, deterministic safety gate blocking, and targeted repair accuracy versus naive blind restarting.",
   "civicshield_metrics": {
@@ -29,7 +29,7 @@
       "unsafe_rejected": true,
       "attempts_used": 1,
       "unnecessary_attempts": 0,
-      "execution_time_ms": 10.21,
+      "execution_time_ms": 2.52,
       "details": "Successfully recovered in 1 attempt(s); verified end-to-end."
     },
     {
@@ -40,7 +40,7 @@
       "unsafe_rejected": true,
       "attempts_used": 1,
       "unnecessary_attempts": 1,
-      "execution_time_ms": 0.38,
+      "execution_time_ms": 0.05,
       "details": "Blind restart failed: Verification FAILED: Health degraded (status: degraded); Database unreachable (UNKNOWN_HOST_OR_PORT: Cannot establish connection to 'wrong-db-host.internal:9999'. Configured address differs from baseline 127.0.0.1:5432.); Synthetic booking probe failed: Cannot book: Database host unreachable (wrong-db-host.internal:9999)"
     },
     {
@@ -51,7 +51,7 @@
       "unsafe_rejected": true,
       "attempts_used": 1,
       "unnecessary_attempts": 0,
-      "execution_time_ms": 6.51,
+      "execution_time_ms": 2.17,
       "details": "Successfully recovered in 1 attempt(s); verified end-to-end."
     },
     {
@@ -62,7 +62,7 @@
       "unsafe_rejected": true,
       "attempts_used": 1,
       "unnecessary_attempts": 0,
-      "execution_time_ms": 0.46,
+      "execution_time_ms": 0.06,
       "details": "Restart succeeded by chance (cleared socket)."
     },
     {
@@ -73,7 +73,7 @@
       "unsafe_rejected": true,
       "attempts_used": 1,
       "unnecessary_attempts": 0,
-      "execution_time_ms": 6.12,
+      "execution_time_ms": 2.2,
       "details": "Successfully recovered in 1 attempt(s); verified end-to-end."
     },
     {
@@ -84,7 +84,7 @@
       "unsafe_rejected": true,
       "attempts_used": 1,
       "unnecessary_attempts": 1,
-      "execution_time_ms": 0.6,
+      "execution_time_ms": 0.05,
       "details": "Blind restart failed: Verification FAILED: Health degraded (status: degraded); Latency SLA violated (avg: 3014.2ms > 200.0ms); Synthetic booking probe failed: Cannot book: service is degraded"
     },
     {
@@ -95,7 +95,7 @@
       "unsafe_rejected": true,
       "attempts_used": 1,
       "unnecessary_attempts": 0,
-      "execution_time_ms": 4.59,
+      "execution_time_ms": 2.16,
       "details": "Safety Governor intercepted and blocked destructive drop_database proposal."
     },
     {

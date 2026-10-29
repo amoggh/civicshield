@@ -1,8 +1,10 @@
 """
 State schema for the CivicShield LangGraph incident response workflow.
+Supports Shadow Mode, Supervised Mode, and Autonomous Mode.
 """
 
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
@@ -17,12 +19,20 @@ from app.recovery.models import (
 )
 
 
+class AutonomyMode(str, Enum):
+    """The operating autonomy policy for the incident remediation workflow."""
+    SHADOW = "shadow"          # Observe and evaluate; strictly never execute repairs
+    SUPERVISED = "supervised"  # Pause for explicit human approval before executing
+    AUTONOMOUS = "autonomous"  # Automatically execute safe, allowlisted repairs
+
+
 class CivicShieldState(TypedDict, total=False):
     """
     Central state container passed between LangGraph nodes.
     Maintains an immutable record of evidence, hypotheses, decisions, and attempts.
     """
     incident_description: str
+    autonomy_mode: str
     evidence: DiagnosticReport | None
     hypothesis: str
     planner_recommendation: PlannerRecommendation | None
@@ -36,13 +46,22 @@ class CivicShieldState(TypedDict, total=False):
     timeline: list[dict[str, Any]]
     error_message: str | None
     force_fallback: bool
+    awaiting_approval: bool
+    human_approved: bool | None
+    rejection_reason: str | None
+    shadow_matches_expected: bool | None
+    shadow_expected_action: str | None
 
 
 class WorkflowRunRequest(BaseModel):
-    """Request payload to initiate an autonomous investigation & recovery workflow."""
+    """Request payload to initiate an investigation & recovery workflow."""
     incident_description: str = Field(
         default="Automated clinic incident response trigger",
         description="Description of the incident or reported symptom",
+    )
+    autonomy_mode: AutonomyMode = Field(
+        default=AutonomyMode.AUTONOMOUS,
+        description="Autonomy mode: 'shadow' (observe only), 'supervised' (human gate), 'autonomous' (auto-execute)",
     )
     force_fallback: bool = Field(
         default=False,
@@ -56,16 +75,35 @@ class WorkflowRunRequest(BaseModel):
     )
 
 
+class WorkflowResumeRequest(BaseModel):
+    """Request payload for human operator decision in Supervised Mode."""
+    approved: bool = Field(
+        description="Whether the operator approves executing the proposed repair"
+    )
+    rejection_reason: str | None = Field(
+        default=None,
+        description="Optional justification if the proposal is rejected"
+    )
+    paused_state: dict[str, Any] = Field(
+        description="The serialized state dictionary returned when workflow paused in AWAITING_APPROVAL"
+    )
+
+
 class WorkflowRunResponse(BaseModel):
-    """Response returned upon workflow completion or escalation."""
+    """Response returned upon workflow completion, pause, or escalation."""
     status: str
+    autonomy_mode: str = "autonomous"
     incident_description: str
     attempt_count: int
     hypothesis: str
     planner_recommendation: PlannerRecommendation | None
+    proposed_action: ActionProposal | None = None
     governor_decision: GovernorDecision | None
     execution_result: ExecutionResult | None
     verification_result: VerificationResult | None
     timeline: list[dict[str, Any]]
     completed_at: datetime
-
+    awaiting_approval: bool = False
+    human_approved: bool | None = None
+    shadow_matches_expected: bool | None = None
+    shadow_expected_action: str | None = None

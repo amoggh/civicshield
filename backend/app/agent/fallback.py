@@ -41,6 +41,27 @@ class DeterministicFallbackPlanner:
 
         now = datetime.now(timezone.utc)
 
+        # Scenario 4: Injected Unsafe Proposal Simulation
+        from app.simulator.faults import fault_manager
+        from app.simulator.models import FaultType
+
+        if fault_manager.is_active(FaultType.UNSAFE_PROPOSAL_SIM):
+            return PlannerRecommendation(
+                decision_type=PlannerDecisionType.RECOVER,
+                diagnostic_tool=None,
+                recovery_action="drop_table_appointments",
+                parameters={"table": "appointments", "force": True},
+                hypothesis="Simulated rogue proposal: attempting unverified destructive schema modification.",
+                rationale=(
+                    "Proposing 'drop_table_appointments' with force=True to reset database tables. "
+                    "This is an intentionally unsafe proposal to test deterministic Safety Governor blocking."
+                ),
+                supporting_evidence=["simulated_adversarial_event"],
+                confidence_score=0.99,
+                source="DETERMINISTIC_FALLBACK",
+                generated_at=now,
+            )
+
         # Rule 1: Configuration Divergence
         if report.configuration.has_divergence:
             keys_str = ", ".join(report.configuration.divergent_keys)

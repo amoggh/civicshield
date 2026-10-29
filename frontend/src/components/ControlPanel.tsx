@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Play, RotateCcw, Zap, AlertTriangle, Loader2 } from 'lucide-react';
+import { Play, RotateCcw, Zap, AlertTriangle, Loader2, Eye, UserCheck, Bot } from 'lucide-react';
+import type { AutonomyMode } from '../types/api';
 
 interface ControlPanelProps {
   activeFaults: string[];
   isInvestigating: boolean;
+  autonomyMode: AutonomyMode;
+  onAutonomyModeChange: (mode: AutonomyMode) => void;
   onInjectFault: (faultType: string, params: Record<string, unknown>) => void;
   onResetSimulator: () => void;
   onRunInvestigation: (forceFallback: boolean) => void;
@@ -12,6 +15,8 @@ interface ControlPanelProps {
 export const ControlPanel: React.FC<ControlPanelProps> = ({
   activeFaults,
   isInvestigating,
+  autonomyMode,
+  onAutonomyModeChange,
   onInjectFault,
   onResetSimulator,
   onRunInvestigation,
@@ -31,14 +36,75 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
   const hasFault = activeFaults.length > 0;
 
+  const modeDescriptions: Record<AutonomyMode, string> = {
+    shadow: 'Shadow Mode: Agents investigate and evaluate against ground truth, but strictly never execute repairs.',
+    supervised: 'Supervised Mode: Workflow pauses before execution; requires explicit human authorization to apply changes.',
+    autonomous: 'Autonomous Mode: Allowlisted, safe repairs execute automatically upon Safety Governor approval.',
+  };
+
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 shadow-sm">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 shadow-sm space-y-4">
+      {/* 1. Autonomy Mode Policy Segmented Control */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/80 pb-3.5">
+        <div>
+          <span className="text-xs font-semibold text-zinc-200 uppercase tracking-wider block">
+            Operating Autonomy Mode
+          </span>
+          <p className="text-[11px] text-zinc-400 mt-0.5">
+            {modeDescriptions[autonomyMode]}
+          </p>
+        </div>
+
+        {/* 3-Way Segmented Button Group */}
+        <div className="inline-flex p-1 rounded-lg bg-zinc-950 border border-zinc-800 text-xs shrink-0">
+          <button
+            onClick={() => onAutonomyModeChange('shadow')}
+            disabled={isInvestigating}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
+              autonomyMode === 'shadow'
+                ? 'bg-purple-950/80 text-purple-300 border border-purple-800 shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            <span>Shadow</span>
+          </button>
+
+          <button
+            onClick={() => onAutonomyModeChange('supervised')}
+            disabled={isInvestigating}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
+              autonomyMode === 'supervised'
+                ? 'bg-amber-950/80 text-amber-300 border border-amber-800 shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <UserCheck className="h-3.5 w-3.5" />
+            <span>Supervised</span>
+          </button>
+
+          <button
+            onClick={() => onAutonomyModeChange('autonomous')}
+            disabled={isInvestigating}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
+              autonomyMode === 'autonomous'
+                ? 'bg-zinc-100 text-zinc-950 shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Bot className="h-3.5 w-3.5" />
+            <span>Autonomous</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Simulation Controls & Trigger */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         {/* Left Side: Fault Injection */}
         <div className="flex-1 space-y-3">
           <div className="flex items-center gap-2.5">
             <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-              1. Fault Injection Simulator
+              Simulation Scenario
             </span>
             {hasFault ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-red-950/60 text-red-400 border border-red-800/60 animate-pulse">
@@ -110,7 +176,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             ) : (
               <>
                 <Play className="h-3.5 w-3.5 fill-current" />
-                <span>Run AI Investigation</span>
+                <span>Run {autonomyMode.toUpperCase()} Run</span>
               </>
             )}
           </button>

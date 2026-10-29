@@ -3,7 +3,7 @@ Conditional edge routing logic for the CivicShield LangGraph workflow.
 
 Controls deterministic branching across:
 - Plan -> Diagnose (gather more evidence) / Safety Gate (evaluate action) / Escalate / End
-- Safety Gate -> Execute (approved) / Escalate (rejected/unsafe)
+- Safety Gate -> Execute (approved) / Escalate (rejected/unsafe) / Shadow / Await Approval
 - Verify -> End (passed) / Diagnose (retry if attempt <= 3) / Escalate (retries exhausted)
 """
 
@@ -47,20 +47,43 @@ def route_after_plan(state: CivicShieldState) -> str:
 def route_after_safety(state: CivicShieldState) -> str:
     """
     Branching after deterministic safety governor check:
-    - APPROVED -> proceed to execute recovery action
-    - REJECTED -> route directly to escalation (unsafe action blocked)
+    - If Governor REJECTED -> route directly to escalate (unsafe action blocked)
+    - If Governor APPROVED:
+      - If autonomy_mode == 'shadow' -> route to shadow evaluation
+      - If autonomy_mode == 'supervised' ->
+        - if human_approved is None -> route to await_approval (pause)
+        - if human_approved is True -> route to execute
+        - if human_approved is False -> route to escalate
+      - If autonomy_mode == 'autonomous' -> route to execute
     """
     decision = state.get("governor_decision")
     if not decision:
         logger.warning("Routing after safety: No governor decision found -> escalating.")
         return "escalate"
 
-    if decision.approved:
-        logger.info("Routing after safety: Action '%s' APPROVED -> executing.", decision.action_type)
-        return "execute"
-    else:
-        logger.warning("Routing after safety: Action '%s' REJECTED -> escalating.", decision.action_type)
+    if not decision.approved:
+        logger.warning("Routing after safety: Action '%s' REJECTED by Governor -> escalating.", decision.action_type)
         return "escalate"
+
+    autonomy_mode = state.get("autonomy_mode", "autonomous")
+
+    if autonomy_mode == "shadow":
+        logger.info("Routing after safety: Shadow Mode active -> routing to shadow evaluation.")
+        return "shadow"
+    elif autonomy_mode == "supervised":
+        human_approved = state.get("human_approved")
+        if human_approved is None:
+            logger.info("Routing after safety: Supervised Mode active -> awaiting human approval.")
+            return "await_approval"
+        elif human_approved is True:
+            logger.info("Routing after safety: Human operator approved action -> executing.")
+            return "execute"
+        else:
+            logger.warning("Routing after safety: Human operator rejected action -> escalating.")
+            return "escalate"
+    else:
+        logger.info("Routing after safety: Autonomous Mode active -> executing.")
+        return "execute"
 
 
 def route_after_verify(state: CivicShieldState) -> str:
@@ -96,4 +119,3 @@ def route_after_verify(state: CivicShieldState) -> str:
             max_att,
         )
         return "escalate"
-

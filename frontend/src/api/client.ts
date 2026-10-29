@@ -4,10 +4,12 @@
 
 import type {
   AgentStatusResponse,
+  AutonomyMode,
   ClinicHealthResponse,
   DiagnosticReport,
   EvaluationReport,
   FaultStatusResponse,
+  WorkflowResumeRequest,
   WorkflowRunResponse,
 } from '../types/api';
 
@@ -78,14 +80,25 @@ export const api = {
 
   // Agent & LangGraph Workflow
   getAgentStatus: () => request<AgentStatusResponse>('/agent/status'),
-  runWorkflow: (incidentDescription: string, forceFallback: boolean = false, maxAttempts: number = 3) =>
+  runWorkflow: (
+    incidentDescription: string,
+    autonomyMode: AutonomyMode = 'autonomous',
+    forceFallback: boolean = false,
+    maxAttempts: number = 3
+  ) =>
     request<WorkflowRunResponse>('/workflow/run', {
       method: 'POST',
       body: JSON.stringify({
         incident_description: incidentDescription,
+        autonomy_mode: autonomyMode,
         force_fallback: forceFallback,
         max_attempts: maxAttempts,
       }),
+    }),
+  resumeWorkflow: (req: WorkflowResumeRequest) =>
+    request<WorkflowRunResponse>('/workflow/resume', {
+      method: 'POST',
+      body: JSON.stringify(req),
     }),
 
   // Evaluation & Benchmark

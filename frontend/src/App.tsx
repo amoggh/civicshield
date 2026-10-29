@@ -11,6 +11,7 @@ import { VerificationCard } from './components/VerificationCard';
 import { Sparkles, Terminal, BarChart3, AlertCircle } from 'lucide-react';
 import type {
   AgentStatusResponse,
+  AutonomyMode,
   ClinicHealthResponse,
   DiagnosticReport,
   EvaluationReport,
@@ -28,8 +29,10 @@ function App() {
   const [benchmarkReport, setBenchmarkReport] = useState<EvaluationReport | null>(null);
 
   const [activeTab, setActiveTab] = useState<TabType>('pipeline');
+  const [autonomyMode, setAutonomyMode] = useState<AutonomyMode>('autonomous');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isInvestigating, setIsInvestigating] = useState<boolean>(false);
+  const [isResuming, setIsResuming] = useState<boolean>(false);
   const [isRunningBenchmark, setIsRunningBenchmark] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -94,6 +97,7 @@ function App() {
     try {
       const result = await api.runWorkflow(
         'Operator requested automated incident response investigation',
+        autonomyMode,
         forceFallback,
         3
       );
@@ -106,6 +110,26 @@ function App() {
       setErrorMessage(msg);
     } finally {
       setIsInvestigating(false);
+    }
+  };
+
+  const handleResumeWorkflow = async (approved: boolean, reason?: string) => {
+    if (!workflowResult) return;
+    setIsResuming(true);
+    setErrorMessage(null);
+    try {
+      const resumed = await api.resumeWorkflow({
+        approved,
+        rejection_reason: reason || null,
+        paused_state: workflowResult as unknown as Record<string, unknown>,
+      });
+      setWorkflowResult(resumed);
+      await loadDashboardData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to process operator decision';
+      setErrorMessage(msg);
+    } finally {
+      setIsResuming(false);
     }
   };
 
@@ -152,10 +176,12 @@ function App() {
           </div>
         )}
 
-        {/* Control Room Panel: Scenario Selector & Trigger */}
+        {/* Control Room Panel: Scenario Selector, Autonomy Modes, & Trigger */}
         <ControlPanel
           activeFaults={activeFaults}
           isInvestigating={isInvestigating}
+          autonomyMode={autonomyMode}
+          onAutonomyModeChange={setAutonomyMode}
           onInjectFault={handleInjectFault}
           onResetSimulator={handleResetSimulator}
           onRunInvestigation={handleRunInvestigation}
@@ -210,7 +236,9 @@ function App() {
           </div>
 
           <div className="hidden sm:block text-xs text-zinc-500 font-mono">
-            {workflowResult ? `Status: ${workflowResult.status} (${workflowResult.attempt_count} attempts)` : 'Status: Ready'}
+            {workflowResult
+              ? `Status: ${workflowResult.status} (${workflowResult.attempt_count} attempts) [${workflowResult.autonomy_mode ?? autonomyMode}]`
+              : `Status: Ready [${autonomyMode}]`}
           </div>
         </div>
 
@@ -225,6 +253,14 @@ function App() {
             <SafetyGovernorCard
               governorDecision={workflowResult?.governor_decision ?? null}
               proposedAction={workflowResult?.planner_recommendation?.recovery_action ?? null}
+              autonomyMode={workflowResult?.autonomy_mode ?? autonomyMode}
+              awaitingApproval={workflowResult?.awaiting_approval ?? false}
+              humanApproved={workflowResult?.human_approved ?? null}
+              shadowMatchesExpected={workflowResult?.shadow_matches_expected ?? null}
+              shadowExpectedAction={workflowResult?.shadow_expected_action ?? null}
+              onApprove={() => handleResumeWorkflow(true)}
+              onReject={(reason) => handleResumeWorkflow(false, reason)}
+              isResuming={isResuming}
             />
 
             <VerificationCard

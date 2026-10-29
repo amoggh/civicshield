@@ -14,6 +14,7 @@ class FaultType(str, Enum):
     INVALID_DB_CONFIG = "invalid_db_config"
     DB_UNAVAILABLE = "db_unavailable"
     HIGH_LATENCY = "high_latency"
+    UNSAFE_PROPOSAL_SIM = "unsafe_proposal_sim"
 
 
 class FaultInjectionRequest(BaseModel):
