@@ -1,4 +1,5 @@
 import React from 'react';
+import { BarChart3, RotateCw, CheckCircle2, XCircle } from 'lucide-react';
 import type { EvaluationReport } from '../types/api';
 
 interface BenchmarkCardProps {
@@ -14,19 +15,22 @@ export const BenchmarkCard: React.FC<BenchmarkCardProps> = ({
 }) => {
   if (!report) {
     return (
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 text-center space-y-3">
-        <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Evaluation & Baseline Benchmark
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 text-center space-y-3">
+        <div className="flex justify-center">
+          <BarChart3 className="h-6 w-6 text-zinc-600" />
         </div>
-        <p className="text-xs text-slate-500 max-w-md mx-auto">
+        <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+          Empirical Benchmark & Evaluation
+        </div>
+        <p className="text-xs text-zinc-500 max-w-md mx-auto">
           No benchmark data loaded yet. Run the benchmark suite to empirically compare CivicShield against a blind restart baseline.
         </p>
         <button
           onClick={onRunBenchmark}
           disabled={isRunningBenchmark}
-          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition-colors disabled:opacity-50"
+          className="h-8 px-4 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-semibold text-xs transition-colors disabled:opacity-50"
         >
-          {isRunningBenchmark ? 'Running Trials...' : 'Run Benchmark Suite'}
+          {isRunningBenchmark ? 'Running Trials...' : 'Run Benchmark Trials'}
         </button>
       </div>
     );
@@ -34,7 +38,6 @@ export const BenchmarkCard: React.FC<BenchmarkCardProps> = ({
 
   const { civicshield_metrics: cs, baseline_metrics: bl, scenario_runs } = report;
 
-  // Group scenario runs by scenario name for the comparison table
   const scenarioNames = ['invalid_db_config', 'db_unavailable', 'high_latency', 'adversarial_unsafe'];
 
   const getScenarioLabel = (sc: string) => {
@@ -53,186 +56,127 @@ export const BenchmarkCard: React.FC<BenchmarkCardProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 space-y-6 shadow-sm">
       {/* Header & Trigger */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800/80 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-white tracking-tight">
-              Empirical Evaluation: CivicShield vs. Restart-Only Baseline
-            </h2>
-            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-              N={report.sample_size} Scenarios
-            </span>
+            <BarChart3 className="h-4 w-4 text-zinc-300" />
+            <h3 className="text-sm font-semibold text-zinc-100">
+              Evaluation: CivicShield vs. Blind Restart Baseline
+            </h3>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Metrics calculated from recorded runs under identical initial conditions (never synthetic assumptions).
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Empirical comparative analysis across {report.sample_size} automated trials
           </p>
         </div>
 
         <button
           onClick={onRunBenchmark}
           disabled={isRunningBenchmark}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-600/20 transition-all disabled:opacity-50"
+          className="h-8 inline-flex items-center gap-1.5 px-3.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 text-xs font-medium transition-colors disabled:opacity-50"
         >
-          {isRunningBenchmark ? (
-            <>
-              <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-              <span>Executing Trials...</span>
-            </>
-          ) : (
-            <>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Run Benchmark Suite</span>
-            </>
-          )}
+          <RotateCw className={`h-3.5 w-3.5 ${isRunningBenchmark ? 'animate-spin' : ''}`} />
+          {isRunningBenchmark ? 'Running Trials...' : 'Re-run Benchmark'}
         </button>
       </div>
 
-      {/* Side-by-Side Quantitative Metrics Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {/* Metric 1: Recovery Success Rate */}
-        <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-          <div className="text-[11px] text-slate-400 font-medium">Recovery Success</div>
-          <div className="flex items-baseline justify-between pt-1">
-            <div>
-              <span className="text-xl font-black text-emerald-400">{cs.recovery_success_rate}%</span>
-              <div className="text-[10px] text-slate-500">CivicShield</div>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-bold text-slate-400">{bl.recovery_success_rate}%</span>
-              <div className="text-[10px] text-slate-500">Baseline</div>
-            </div>
+      {/* 4 Metric Comparison Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-800/80">
+          <div className="text-[11px] text-zinc-500 font-medium uppercase">Recovery Success Rate</div>
+          <div className="text-2xl font-semibold text-zinc-100 mt-1">
+            {cs.recovery_success_rate.toFixed(1)}%
+          </div>
+          <div className="text-xs text-zinc-400 mt-1 flex items-center justify-between">
+            <span>Baseline:</span>
+            <span className="font-mono">{bl.recovery_success_rate.toFixed(1)}%</span>
           </div>
         </div>
 
-        {/* Metric 2: Root Cause Accuracy */}
-        <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-          <div className="text-[11px] text-slate-400 font-medium">Root Cause Accuracy</div>
-          <div className="flex items-baseline justify-between pt-1">
-            <div>
-              <span className="text-xl font-black text-emerald-400">{cs.root_cause_accuracy}%</span>
-              <div className="text-[10px] text-slate-500">CivicShield</div>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-bold text-slate-400">{bl.root_cause_accuracy}%</span>
-              <div className="text-[10px] text-slate-500">Baseline</div>
-            </div>
+        <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-800/80">
+          <div className="text-[11px] text-zinc-500 font-medium uppercase">Root Cause Identification</div>
+          <div className="text-2xl font-semibold text-zinc-100 mt-1">
+            {cs.root_cause_accuracy.toFixed(1)}%
+          </div>
+          <div className="text-xs text-zinc-400 mt-1 flex items-center justify-between">
+            <span>Baseline:</span>
+            <span className="font-mono text-zinc-500">0.0% (Blind)</span>
           </div>
         </div>
 
-        {/* Metric 3: Unsafe Action Block Rate */}
-        <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-          <div className="text-[11px] text-slate-400 font-medium">Unsafe Action Block Rate</div>
-          <div className="flex items-baseline justify-between pt-1">
-            <div>
-              <span className="text-xl font-black text-emerald-400">{cs.unsafe_action_rejection_rate}%</span>
-              <div className="text-[10px] text-slate-500">CivicShield</div>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-bold text-rose-400">{bl.unsafe_action_rejection_rate}%</span>
-              <div className="text-[10px] text-slate-500">Baseline</div>
-            </div>
+        <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-800/80">
+          <div className="text-[11px] text-zinc-500 font-medium uppercase">Unsafe Action Block Rate</div>
+          <div className="text-2xl font-semibold text-emerald-400 mt-1">
+            {cs.unsafe_action_rejection_rate.toFixed(1)}%
+          </div>
+          <div className="text-xs text-zinc-400 mt-1 flex items-center justify-between">
+            <span>Baseline:</span>
+            <span className="font-mono text-red-400">0.0% (Unchecked)</span>
           </div>
         </div>
 
-        {/* Metric 4: Unnecessary Recovery Attempts */}
-        <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-          <div className="text-[11px] text-slate-400 font-medium">Futile Attempts</div>
-          <div className="flex items-baseline justify-between pt-1">
-            <div>
-              <span className="text-xl font-black text-emerald-400">{cs.total_unnecessary_attempts}</span>
-              <div className="text-[10px] text-slate-500">CivicShield</div>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-bold text-amber-400">{bl.total_unnecessary_attempts}</span>
-              <div className="text-[10px] text-slate-500">Baseline</div>
-            </div>
+        <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-800/80">
+          <div className="text-[11px] text-zinc-500 font-medium uppercase">Futile Attempts</div>
+          <div className="text-2xl font-semibold text-zinc-100 mt-1">
+            {cs.total_unnecessary_attempts}
           </div>
-        </div>
-
-        {/* Metric 5: Average Attempts to Recover */}
-        <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-          <div className="text-[11px] text-slate-400 font-medium">Mean Attempts</div>
-          <div className="flex items-baseline justify-between pt-1">
-            <div>
-              <span className="text-xl font-black text-emerald-400">{cs.avg_attempts_to_recover}</span>
-              <div className="text-[10px] text-slate-500">CivicShield</div>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-bold text-slate-400">{bl.avg_attempts_to_recover}</span>
-              <div className="text-[10px] text-slate-500">Baseline</div>
-            </div>
+          <div className="text-xs text-zinc-400 mt-1 flex items-center justify-between">
+            <span>Baseline:</span>
+            <span className="font-mono text-red-400">{bl.total_unnecessary_attempts} wasted</span>
           </div>
         </div>
       </div>
 
-      {/* Scenario Trial Records Table */}
-      <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
+      {/* Comparison Data Table */}
+      <div className="rounded-lg border border-zinc-800 overflow-hidden">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800 uppercase font-semibold text-[10px] tracking-wider">
+          <thead className="bg-zinc-950 text-zinc-400 border-b border-zinc-800">
             <tr>
-              <th className="px-4 py-3">Scenario</th>
-              <th className="px-4 py-3">CivicShield Outcome</th>
-              <th className="px-4 py-3">Restart Baseline Outcome</th>
-              <th className="px-4 py-3">Operational Takeaway</th>
+              <th className="py-2.5 px-4 font-medium">Fault Scenario</th>
+              <th className="py-2.5 px-4 font-medium">CivicShield Recovery</th>
+              <th className="py-2.5 px-4 font-medium">Baseline Recovery</th>
+              <th className="py-2.5 px-4 font-medium">Attempts Used</th>
+              <th className="py-2.5 px-4 font-medium">Outcome Details</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 font-medium text-slate-300">
-            {scenarioNames.map((scKey) => {
-              const csRun = scenario_runs.find((r) => r.scenario === scKey && r.system === 'CivicShield');
-              const blRun = scenario_runs.find((r) => r.scenario === scKey && r.system === 'RestartBaseline');
+          <tbody className="divide-y divide-zinc-800/60 bg-zinc-900/30">
+            {scenarioNames.map((sName) => {
+              const csRun = scenario_runs.find((r) => r.system === 'civicshield' && r.scenario === sName);
+              const blRun = scenario_runs.find((r) => r.system === 'baseline_restart' && r.scenario === sName);
 
               return (
-                <tr key={scKey} className="hover:bg-slate-900/40 transition-colors">
-                  <td className="px-4 py-3 font-semibold text-white">{getScenarioLabel(scKey)}</td>
-
-                  {/* CivicShield Column */}
-                  <td className="px-4 py-3">
-                    {scKey === 'adversarial_unsafe' ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
-                        <span>🛡️ Blocked (100% Safe)</span>
-                      </span>
-                    ) : csRun?.recovered ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
-                        <span>✓ Recovered ({csRun.attempts_used} att.)</span>
+                <tr key={sName} className="hover:bg-zinc-800/30 transition-colors">
+                  <td className="py-3 px-4 font-medium text-zinc-200">
+                    {getScenarioLabel(sName)}
+                  </td>
+                  <td className="py-3 px-4">
+                    {csRun?.recovered ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Recovered
                       </span>
                     ) : (
-                      <span className="text-rose-400 font-bold">✕ Failed</span>
+                      <span className="inline-flex items-center gap-1 text-red-400 font-medium">
+                        <XCircle className="h-3.5 w-3.5" /> Blocked/Escalated
+                      </span>
                     )}
                   </td>
-
-                  {/* Baseline Column */}
-                  <td className="px-4 py-3">
-                    {scKey === 'adversarial_unsafe' ? (
-                      <span className="inline-flex items-center gap-1 text-rose-400 font-bold">
-                        <span>⚠️ Unsafe Executed</span>
-                      </span>
-                    ) : blRun?.recovered ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
-                        <span>✓ Recovered</span>
+                  <td className="py-3 px-4">
+                    {blRun?.recovered ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Recovered
                       </span>
                     ) : (
-                      <span className="text-rose-400 font-bold">✕ Failed ({blRun?.details.slice(0, 32)}...)</span>
+                      <span className="inline-flex items-center gap-1 text-zinc-500">
+                        <XCircle className="h-3.5 w-3.5" /> Failed
+                      </span>
                     )}
                   </td>
-
-                  {/* Analysis Column */}
-                  <td className="px-4 py-3 text-slate-400 text-[11px]">
-                    {scKey === 'invalid_db_config' &&
-                      'Baseline fails because restarting reloads the corrupted host/port. CivicShield diffs config and restores baseline.'}
-                    {scKey === 'db_unavailable' &&
-                      'Both systems recover; baseline succeeds because socket reconnection happens to occur on restart.'}
-                    {scKey === 'high_latency' &&
-                      'Restarting does not eliminate latency overhead. CivicShield isolates SLA breach and clears latency.'}
-                    {scKey === 'adversarial_unsafe' &&
-                      'Baseline lacks safety gating. CivicShield deterministic governor strictly blocks drop_database.'}
+                  <td className="py-3 px-4 font-mono text-[11px] text-zinc-300">
+                    {csRun?.attempts_used ?? 1} attempt(s)
+                  </td>
+                  <td className="py-3 px-4 text-zinc-400 truncate max-w-xs">
+                    {csRun?.details || '-'}
                   </td>
                 </tr>
               );
@@ -240,13 +184,6 @@ export const BenchmarkCard: React.FC<BenchmarkCardProps> = ({
           </tbody>
         </table>
       </div>
-
-      {/* Limitations Disclaimer */}
-      <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 flex items-start gap-2">
-        <span className="text-amber-400 font-bold">Benchmark Limitations:</span>
-        <span className="leading-relaxed">{report.limitations}</span>
-      </div>
     </div>
   );
 };
-

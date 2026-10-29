@@ -8,6 +8,7 @@ import { HypothesisCard } from './components/HypothesisCard';
 import { SafetyGovernorCard } from './components/SafetyGovernorCard';
 import { TimelineCard } from './components/TimelineCard';
 import { VerificationCard } from './components/VerificationCard';
+import { Sparkles, Terminal, BarChart3, AlertCircle } from 'lucide-react';
 import type {
   AgentStatusResponse,
   ClinicHealthResponse,
@@ -15,6 +16,8 @@ import type {
   EvaluationReport,
   WorkflowRunResponse,
 } from './types/api';
+
+type TabType = 'pipeline' | 'timeline' | 'benchmark';
 
 function App() {
   const [health, setHealth] = useState<ClinicHealthResponse | null>(null);
@@ -24,6 +27,7 @@ function App() {
   const [workflowResult, setWorkflowResult] = useState<WorkflowRunResponse | null>(null);
   const [benchmarkReport, setBenchmarkReport] = useState<EvaluationReport | null>(null);
 
+  const [activeTab, setActiveTab] = useState<TabType>('pipeline');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isInvestigating, setIsInvestigating] = useState<boolean>(false);
   const [isRunningBenchmark, setIsRunningBenchmark] = useState<boolean>(false);
@@ -94,6 +98,8 @@ function App() {
         3
       );
       setWorkflowResult(result);
+      // Auto-switch to pipeline tab so the user sees the 3 steps immediately
+      setActiveTab('pipeline');
       await loadDashboardData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to complete workflow run';
@@ -119,7 +125,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-emerald-500 selection:text-slate-950">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-zinc-800 selection:text-zinc-100">
       {/* 1. Header Bar */}
       <Header
         health={health}
@@ -128,16 +134,18 @@ function App() {
         onRefresh={loadDashboardData}
       />
 
-      {/* 2. Main Content Area */}
+      {/* 2. Main Content Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
         {/* Error Notification Banner */}
         {errorMessage && (
-          <div className="p-4 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 text-sm flex items-start gap-3 shadow-lg">
-            <span className="text-rose-400 font-bold">Error:</span>
-            <span className="flex-1 leading-snug">{errorMessage}</span>
+          <div className="p-3.5 rounded-lg bg-red-950/40 border border-red-900/60 text-red-300 text-xs flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
             <button
               onClick={() => setErrorMessage(null)}
-              className="text-rose-400 hover:text-white text-xs font-semibold px-2 py-0.5 rounded bg-rose-900/50"
+              className="text-red-400 hover:text-white text-xs font-semibold px-2 py-0.5 rounded bg-red-900/40"
             >
               Dismiss
             </button>
@@ -156,10 +164,59 @@ function App() {
         {/* Live Diagnostics Ribbon (4 stat cards) */}
         <DiagnosticsRibbon report={report} loading={isLoading} />
 
-        {/* Two-Column Operational Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Hypothesis, Safety Gate, Verification (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
+        {/* Minimalist Shadcn Tab Switcher */}
+        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+          <div className="inline-flex p-1 rounded-lg bg-zinc-900 border border-zinc-800 text-xs">
+            <button
+              onClick={() => setActiveTab('pipeline')}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-all ${
+                activeTab === 'pipeline'
+                  ? 'bg-zinc-100 text-zinc-950 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>AI Remediation Pipeline</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-all ${
+                activeTab === 'timeline'
+                  ? 'bg-zinc-100 text-zinc-950 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <Terminal className="h-3.5 w-3.5" />
+              <span>Execution Timeline</span>
+              {workflowResult && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-300">
+                  {workflowResult.timeline.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('benchmark')}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-all ${
+                activeTab === 'benchmark'
+                  ? 'bg-zinc-100 text-zinc-950 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              <span>Benchmark Comparison</span>
+            </button>
+          </div>
+
+          <div className="hidden sm:block text-xs text-zinc-500 font-mono">
+            {workflowResult ? `Status: ${workflowResult.status} (${workflowResult.attempt_count} attempts)` : 'Status: Ready'}
+          </div>
+        </div>
+
+        {/* Tab 1: 3-Step Remediation Pipeline */}
+        {activeTab === 'pipeline' && (
+          <div className="space-y-4">
             <HypothesisCard
               recommendation={workflowResult?.planner_recommendation ?? null}
               hypothesis={workflowResult?.hypothesis ?? ''}
@@ -175,24 +232,30 @@ function App() {
               overallStatus={workflowResult?.status ?? 'IDLE'}
             />
           </div>
+        )}
 
-          {/* Right Column: Audit Timeline (5 cols) */}
-          <div className="lg:col-span-5">
+        {/* Tab 2: Execution Timeline */}
+        {activeTab === 'timeline' && (
+          <div>
             <TimelineCard timeline={workflowResult?.timeline ?? []} />
           </div>
-        </div>
+        )}
 
-        {/* Evaluation & Benchmark Comparison Section */}
-        <BenchmarkCard
-          report={benchmarkReport}
-          isRunningBenchmark={isRunningBenchmark}
-          onRunBenchmark={handleRunBenchmark}
-        />
+        {/* Tab 3: Evaluation Benchmark */}
+        {activeTab === 'benchmark' && (
+          <div>
+            <BenchmarkCard
+              report={benchmarkReport}
+              isRunningBenchmark={isRunningBenchmark}
+              onRunBenchmark={handleRunBenchmark}
+            />
+          </div>
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 px-6 py-4 text-center text-xs text-slate-400">
-        CivicShield Control Room — Safety-Governed Hybrid Agentic AI Prototype (Synthetic Simulation Mode)
+      {/* Minimal Footer */}
+      <footer className="border-t border-zinc-900 bg-zinc-950 px-6 py-4 text-center text-xs text-zinc-600">
+        CivicShield · Safety-Governed Hybrid Agentic AI Prototype (Synthetic Simulation Mode)
       </footer>
     </div>
   );

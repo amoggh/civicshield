@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Play, RotateCcw, Zap, AlertTriangle, Loader2 } from 'lucide-react';
 
 interface ControlPanelProps {
   activeFaults: string[];
@@ -28,87 +29,88 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     onInjectFault(selectedScenario, params);
   };
 
+  const hasFault = activeFaults.length > 0;
+
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        {/* Left side: Fault Injection simulation controls */}
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        {/* Left Side: Fault Injection */}
         <div className="flex-1 space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Fault Injection Simulator
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+              1. Fault Injection Simulator
             </span>
-            {activeFaults.length > 0 ? (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-950 text-rose-300 border border-rose-800 animate-pulse">
+            {hasFault ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-red-950/60 text-red-400 border border-red-800/60 animate-pulse">
+                <AlertTriangle className="h-3 w-3" />
                 Active Fault: {activeFaults.join(', ')}
               </span>
             ) : (
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">
                 Baseline Healthy
               </span>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <select
               value={selectedScenario}
               onChange={(e) => setSelectedScenario(e.target.value)}
               disabled={isInvestigating}
-              className="bg-slate-950 border border-slate-700 text-slate-100 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+              className="h-9 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-700 disabled:opacity-50 cursor-pointer"
             >
-              <option value="invalid_db_config">Scenario 1: Database Config Drift (Host/Port mismatch)</option>
-              <option value="db_unavailable">Scenario 2: Database Server Outage (Socket refused)</option>
-              <option value="high_latency">Scenario 3: Latency Overhead (+3000ms SLA breach)</option>
+              <option value="invalid_db_config">Scenario 1: DB Config Drift (Port 9999)</option>
+              <option value="db_unavailable">Scenario 2: Database Outage (Socket Refused)</option>
+              <option value="high_latency">Scenario 3: Latency SLA Breach (+3000ms)</option>
+              <option value="unsafe_proposal_sim">Scenario 4: Unsafe Action Injection (Governor Test)</option>
             </select>
 
             <button
               onClick={handleInject}
               disabled={isInvestigating}
-              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-medium text-sm transition-colors shadow-lg shadow-amber-600/20 disabled:opacity-50"
+              className="h-9 inline-flex items-center gap-1.5 px-3.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium transition-colors disabled:opacity-50"
             >
+              <Zap className="h-3.5 w-3.5" />
               Inject Fault
             </button>
 
             <button
               onClick={onResetSimulator}
               disabled={isInvestigating}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm transition-colors border border-slate-700 disabled:opacity-50"
+              className="h-9 inline-flex items-center gap-1.5 px-3.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-medium transition-colors disabled:opacity-50"
             >
-              Reset to Baseline
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset System
             </button>
           </div>
         </div>
 
-        {/* Right side: Autonomous Workflow Runner */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:border-l lg:border-slate-800 lg:pl-6">
-          <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 select-none">
+        {/* Right Side: Agentic AI Runner */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5 lg:border-l lg:border-zinc-800/80 lg:pl-6 pt-3 lg:pt-0 border-t lg:border-t-0 border-zinc-800/60">
+          <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={forceFallback}
               onChange={(e) => setForceFallback(e.target.checked)}
-              className="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4"
+              className="rounded bg-zinc-950 border-zinc-700 text-zinc-100 focus:ring-zinc-400 h-3.5 w-3.5 cursor-pointer accent-zinc-100"
             />
-            <span>Deterministic Fallback Mode</span>
+            <span>Deterministic Mode</span>
           </label>
 
           <button
             onClick={() => onRunInvestigation(forceFallback)}
             disabled={isInvestigating}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm tracking-wide shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-semibold text-xs tracking-tight shadow-sm transition-all transform active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isInvestigating ? (
               <>
-                <svg className="animate-spin h-4 w-4 text-slate-950" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                <span>Orchestrating Graph...</span>
+                <Loader2 className="h-4 w-4 animate-spin text-zinc-950" />
+                <span>Running Workflow...</span>
               </>
             ) : (
               <>
-                <svg className="w-4 h-4 text-slate-950" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                </svg>
-                <span>Run Investigation</span>
+                <Play className="h-3.5 w-3.5 fill-current" />
+                <span>Run AI Investigation</span>
               </>
             )}
           </button>
@@ -117,4 +119,3 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     </div>
   );
 };
-

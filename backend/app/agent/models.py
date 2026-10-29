@@ -80,6 +80,8 @@ class PlannerRecommendation(BaseModel):
 
 class AgentStatusResponse(BaseModel):
     """Runtime configuration status of the AI agent."""
+    model_config = {"protected_namespaces": ()}
+
     has_api_key: bool
     model_name: str
     active_mode: str  # "LLM_ONLINE" or "DETERMINISTIC_FALLBACK"

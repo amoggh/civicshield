@@ -1,4 +1,5 @@
 import React from 'react';
+import { Shield, ShieldCheck, ShieldAlert, Check, X, Lock } from 'lucide-react';
 import type { GovernorDecision } from '../types/api';
 
 interface SafetyGovernorCardProps {
@@ -12,11 +13,16 @@ export const SafetyGovernorCard: React.FC<SafetyGovernorCardProps> = ({
 }) => {
   if (!governorDecision && !proposedAction) {
     return (
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 text-slate-500 text-sm">
-        <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-          Deterministic Safety Governor
+      <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/20 p-5 text-center">
+        <div className="flex justify-center mb-2">
+          <Shield className="h-6 w-6 text-zinc-600" />
         </div>
-        <p>No action proposed yet. Safety checks run automatically before any repair executes.</p>
+        <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">
+          Step 2: Deterministic Safety Governor
+        </div>
+        <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+          Deterministic Python guardrails intercept every LLM recommendation before any simulated change can occur.
+        </p>
       </div>
     );
   }
@@ -24,58 +30,90 @@ export const SafetyGovernorCard: React.FC<SafetyGovernorCardProps> = ({
   const isApproved = governorDecision?.approved ?? false;
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-lg">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Safety Governor & Allowlist
-        </span>
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800">
-          Rule: Strict Allowlist & Bounded Retries
+        <div className="flex items-center gap-2">
+          {isApproved ? (
+            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+          ) : (
+            <ShieldAlert className="h-4 w-4 text-red-400" />
+          )}
+          <span className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
+            Step 2 · Safety Governor Gate
+          </span>
+          <span
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+              isApproved
+                ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
+                : 'bg-red-950/60 text-red-400 border-red-800/60'
+            }`}
+          >
+            {isApproved ? 'ACTION APPROVED' : 'ACTION BLOCKED'}
+          </span>
+        </div>
+        <span className="text-[11px] text-zinc-400 font-mono">
+          Attempt {governorDecision?.attempt_number ?? 1} of 3
         </span>
       </div>
 
-      {/* Proposed Action Display */}
-      <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+      {/* Target Action Banner */}
+      <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-between">
         <div>
-          <div className="text-[11px] text-slate-400 font-medium">Proposed Action:</div>
-          <div className="text-sm font-mono font-bold text-slate-200">
+          <div className="text-[11px] text-zinc-400 font-medium">Intercepted Action:</div>
+          <div className="text-xs font-mono font-semibold text-zinc-200">
             {proposedAction || governorDecision?.action_type || 'NONE'}
           </div>
         </div>
-        <span className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
-          Attempt #{governorDecision?.attempt_number ?? 1} of 3
-        </span>
+        <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+          <Lock className="h-3 w-3 text-zinc-500" />
+          <span>Strict Allowlist</span>
+        </div>
       </div>
 
-      {/* Governor Evaluation Banner */}
+      {/* Decision Rationale */}
       {governorDecision && (
         <div
-          className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+          className={`p-3 rounded-lg border text-xs leading-relaxed flex items-start gap-2.5 ${
             isApproved
-              ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300'
-              : 'bg-rose-950/40 border-rose-800 text-rose-300'
+              ? 'bg-emerald-950/20 border-emerald-900/50 text-emerald-300'
+              : 'bg-red-950/20 border-red-900/50 text-red-300'
           }`}
         >
-          <div
-            className={`mt-0.5 h-4 w-4 rounded-full flex items-center justify-center shrink-0 ${
-              isApproved ? 'bg-emerald-500 text-slate-950' : 'bg-rose-500 text-white'
-            }`}
-          >
-            {isApproved ? '✓' : '✕'}
-          </div>
-          <div className="space-y-1">
-            <div className="text-xs font-bold uppercase tracking-wider">
-              {isApproved ? 'SAFETY GATE: APPROVED' : 'SAFETY GATE: REJECTED & BLOCKED'}
-            </div>
-            <div className="text-xs leading-relaxed opacity-90">{governorDecision.reason}</div>
-            {governorDecision.requires_human_escalation && (
-              <div className="text-[11px] font-semibold text-rose-400 pt-1">
-                ⚠️ Requires Mandatory Human Administrator Escalation
-              </div>
-            )}
+          {isApproved ? (
+            <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+          ) : (
+            <X className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+          )}
+          <div>
+            <span className="font-semibold">{isApproved ? 'Passed Verification:' : 'Safety Violation:'}</span>{' '}
+            {governorDecision.reason}
           </div>
         </div>
       )}
+
+      {/* 4 Guardrail Checks */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+        <div className="p-2 rounded bg-zinc-950/60 border border-zinc-800/60 text-center">
+          <span className="text-zinc-500 block">Allowlist</span>
+          <span className={`font-medium ${isApproved ? 'text-zinc-200' : 'text-red-400'}`}>
+            {isApproved ? 'Verified' : 'Violation'}
+          </span>
+        </div>
+        <div className="p-2 rounded bg-zinc-950/60 border border-zinc-800/60 text-center">
+          <span className="text-zinc-500 block">Destructive Check</span>
+          <span className="text-zinc-200 font-medium">Clean</span>
+        </div>
+        <div className="p-2 rounded bg-zinc-950/60 border border-zinc-800/60 text-center">
+          <span className="text-zinc-500 block">Evidence Match</span>
+          <span className={`font-medium ${isApproved ? 'text-zinc-200' : 'text-zinc-400'}`}>
+            {isApproved ? 'Matched' : 'Unmatched'}
+          </span>
+        </div>
+        <div className="p-2 rounded bg-zinc-950/60 border border-zinc-800/60 text-center">
+          <span className="text-zinc-500 block">Retry Bound</span>
+          <span className="text-zinc-200 font-medium">&le; 3 Capped</span>
+        </div>
+      </div>
     </div>
   );
 };

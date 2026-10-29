@@ -1,4 +1,5 @@
 import React from 'react';
+import { Activity, Clock, Database, SlidersHorizontal } from 'lucide-react';
 import type { DiagnosticReport } from '../types/api';
 
 interface DiagnosticsRibbonProps {
@@ -9,9 +10,9 @@ interface DiagnosticsRibbonProps {
 export const DiagnosticsRibbon: React.FC<DiagnosticsRibbonProps> = ({ report }) => {
   if (!report) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 animate-pulse">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-28 rounded-xl bg-slate-900/60 border border-slate-800" />
+          <div key={i} className="h-24 rounded-xl bg-zinc-900/40 border border-zinc-800" />
         ))}
       </div>
     );
@@ -20,96 +21,118 @@ export const DiagnosticsRibbon: React.FC<DiagnosticsRibbonProps> = ({ report }) 
   const { service_health, database, configuration, latency } = report;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* 1. Service Health Card */}
-      <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 relative overflow-hidden">
-        <div className="flex items-center justify-between text-xs text-slate-400 font-medium mb-1">
-          <span>CLINIC SERVICE</span>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* 1. Service Health */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 transition-colors hover:border-zinc-700/80">
+        <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+          <span className="flex items-center gap-1.5 font-medium">
+            <Activity className="h-3.5 w-3.5 text-zinc-400" />
+            Clinic Service
+          </span>
           <span
-            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
               service_health.is_healthy
-                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                : 'bg-rose-950 text-rose-400 border border-rose-800'
+                ? 'bg-emerald-950/50 text-emerald-400 border-emerald-800/60'
+                : 'bg-red-950/50 text-red-400 border-red-800/60'
             }`}
           >
-            {service_health.status}
+            {service_health.status.toUpperCase()}
           </span>
         </div>
-        <div className="text-2xl font-bold text-white tracking-tight">
-          {service_health.active_doctors} <span className="text-xs font-normal text-slate-400">Doctors Active</span>
+        <div className="text-xl font-semibold text-zinc-100 tracking-tight">
+          {service_health.active_doctors}{' '}
+          <span className="text-xs font-normal text-zinc-400">Doctors Online</span>
         </div>
-        <p className="text-xs text-slate-400 mt-1 truncate">
-          {service_health.pending_appointments} pending appointment(s) queued
+        <p className="text-xs text-zinc-400 mt-1 truncate">
+          {service_health.pending_appointments} pending appointment(s)
         </p>
       </div>
 
-      {/* 2. Database Reachability Card */}
-      <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 relative overflow-hidden">
-        <div className="flex items-center justify-between text-xs text-slate-400 font-medium mb-1">
-          <span>DATABASE SOCKET</span>
+      {/* 2. Latency Monitor */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 transition-colors hover:border-zinc-700/80">
+        <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+          <span className="flex items-center gap-1.5 font-medium">
+            <Clock className="h-3.5 w-3.5 text-zinc-400" />
+            API Latency
+          </span>
           <span
-            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+              latency.sla_violated
+                ? 'bg-red-950/50 text-red-400 border-red-800/60'
+                : 'bg-emerald-950/50 text-emerald-400 border-emerald-800/60'
+            }`}
+          >
+            {latency.sla_violated ? 'SLA BREACH' : 'NORMAL'}
+          </span>
+        </div>
+        <div className="text-xl font-semibold text-zinc-100 tracking-tight">
+          {latency.avg_latency_ms.toFixed(1)}{' '}
+          <span className="text-xs font-normal text-zinc-400">ms roundtrip</span>
+        </div>
+        <p className="text-xs text-zinc-400 mt-1 truncate">
+          {latency.sla_violated
+            ? `Exceeded ${latency.threshold_ms}ms SLA limit`
+            : `Within ${latency.threshold_ms}ms SLA threshold`}
+        </p>
+      </div>
+
+      {/* 3. Database Connection */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 transition-colors hover:border-zinc-700/80">
+        <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+          <span className="flex items-center gap-1.5 font-medium">
+            <Database className="h-3.5 w-3.5 text-zinc-400" />
+            Database Socket
+          </span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
               database.is_reachable
-                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                : 'bg-rose-950 text-rose-400 border border-rose-800'
+                ? 'bg-emerald-950/50 text-emerald-400 border-emerald-800/60'
+                : 'bg-red-950/50 text-red-400 border-red-800/60'
             }`}
           >
             {database.status_code}
           </span>
         </div>
-        <div className="text-base font-semibold text-white tracking-tight truncate">
-          {database.host}:{database.port}
+        <div className="text-xl font-semibold text-zinc-100 tracking-tight truncate">
+          {database.is_reachable ? 'Connected' : 'Unavailable'}
         </div>
-        <p className="text-xs text-slate-400 mt-1 truncate">
-          {database.is_reachable ? 'Socket connected (3.5ms ping)' : (database.error_detail || 'Connection refused')}
+        <p className="text-xs text-zinc-400 mt-1 truncate">
+          {database.is_reachable
+            ? `${database.host}:${database.port} (${database.response_time_ms.toFixed(1)}ms)`
+            : database.error_detail || 'Connection refused'}
         </p>
       </div>
 
-      {/* 3. Configuration Audit Card */}
-      <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 relative overflow-hidden">
-        <div className="flex items-center justify-between text-xs text-slate-400 font-medium mb-1">
-          <span>CONFIG DRIFT</span>
+      {/* 4. Configuration State */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 transition-colors hover:border-zinc-700/80">
+        <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+          <span className="flex items-center gap-1.5 font-medium">
+            <SlidersHorizontal className="h-3.5 w-3.5 text-zinc-400" />
+            Configuration
+          </span>
           <span
-            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
               !configuration.has_divergence
-                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                : 'bg-amber-950 text-amber-400 border border-amber-800'
+                ? 'bg-emerald-950/50 text-emerald-400 border-emerald-800/60'
+                : 'bg-red-950/50 text-red-400 border-red-800/60'
             }`}
           >
-            {!configuration.has_divergence ? 'GOLDEN BASELINE' : 'DIVERGENT'}
+            {!configuration.has_divergence ? 'SYNCED' : 'DRIFT DETECTED'}
           </span>
         </div>
-        <div className="text-2xl font-bold text-white tracking-tight">
-          {configuration.divergent_keys.length}{' '}
-          <span className="text-xs font-normal text-slate-400">Divergent Keys</span>
+        <div className="text-xl font-semibold text-zinc-100 tracking-tight">
+          {!configuration.has_divergence ? (
+            'Baseline'
+          ) : (
+            <span className="text-red-400">{configuration.divergent_keys.length} Field(s) Altered</span>
+          )}
         </div>
-        <p className="text-xs text-slate-400 mt-1 truncate">
-          {configuration.has_divergence
-            ? `Keys: ${configuration.divergent_keys.join(', ')}`
-            : 'Synchronized with baseline template'}
-        </p>
-      </div>
-
-      {/* 4. Latency Monitor Card */}
-      <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 relative overflow-hidden">
-        <div className="flex items-center justify-between text-xs text-slate-400 font-medium mb-1">
-          <span>LATENCY SLA</span>
-          <span
-            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-              !latency.sla_violated
-                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                : 'bg-rose-950 text-rose-400 border border-rose-800'
-            }`}
-          >
-            {!latency.sla_violated ? 'WITHIN SLA' : 'SLA BREACH'}
-          </span>
-        </div>
-        <div className="text-2xl font-bold text-white tracking-tight">
-          {latency.avg_latency_ms}{' '}
-          <span className="text-xs font-normal text-slate-400">ms / {latency.threshold_ms}ms max</span>
-        </div>
-        <p className="text-xs text-slate-400 mt-1 truncate">
-          {latency.sla_violated ? 'Severe response time degradation' : 'Nominal round-trip response time'}
+        <p className="text-xs text-zinc-400 mt-1 truncate font-mono">
+          {!configuration.has_divergence
+            ? 'port: 5432 · pool: 20'
+            : configuration.diffs
+                .map((d) => `${d.key}: ${String(d.current_value)}`)
+                .join(', ')}
         </p>
       </div>
     </div>

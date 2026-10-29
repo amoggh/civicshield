@@ -1,4 +1,5 @@
 import React from 'react';
+import { ShieldCheck, RefreshCw, Cpu } from 'lucide-react';
 import type { ClinicHealthResponse, AgentStatusResponse } from '../types/api';
 
 interface HeaderProps {
@@ -14,98 +15,76 @@ export const Header: React.FC<HeaderProps> = ({
   loading,
   onRefresh,
 }) => {
-  const getStatusBadge = () => {
-    if (!health) {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">
-          <span className="h-2 w-2 rounded-full bg-slate-500 animate-pulse" />
-          CONNECTING...
-        </span>
-      );
-    }
-    if (health.status === 'healthy') {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
-          <span className="h-2 w-2 rounded-full bg-emerald-500 -ml-3.5" />
-          OPERATIONAL (HEALTHY)
-        </span>
-      );
-    }
-    if (health.status === 'degraded') {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-950/80 text-amber-400 border border-amber-800">
-          <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-          SERVICE DEGRADED
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-950/80 text-rose-400 border border-rose-800">
-        <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
-        SERVICE DOWN
-      </span>
-    );
-  };
+  const isHealthy = health?.status === 'healthy';
+  const isDegraded = health?.status === 'degraded';
 
   return (
-    <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-        {/* Brand */}
+    <header className="sticky top-0 z-50 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        {/* Brand & Subtitle */}
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-white font-black text-xl">
-            CS
+          <div className="h-9 w-9 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-950 shadow-sm">
+            <ShieldCheck className="h-5 w-5" />
           </div>
-          <div>
+          <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-white">
-                Civic<span className="text-emerald-400">Shield</span>
-              </h1>
-              <span className="text-xs uppercase tracking-widest px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                v0.6.0
+              <span className="font-semibold text-base text-zinc-100 tracking-tight">
+                CivicShield
+              </span>
+              <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">
+                v1.0
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              Safety-Governed Autonomous Incident Response & Verification
-            </p>
+            <span className="text-xs text-zinc-500">
+              Safety-Governed Autonomous Incident Remediation
+            </span>
           </div>
         </div>
 
-        {/* Status Indicators & Refresh */}
+        {/* Status Indicators & Action */}
         <div className="flex items-center gap-3">
-          {getStatusBadge()}
-
-          {agentStatus && (
+          {/* Service Status Badge */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-300">
             <span
-              className={`text-xs px-2.5 py-1 rounded-md border font-medium ${
-                agentStatus.has_api_key
-                  ? 'bg-blue-950/50 text-blue-300 border-blue-800'
-                  : 'bg-purple-950/50 text-purple-300 border-purple-800'
+              className={`h-2 w-2 rounded-full ${
+                !health
+                  ? 'bg-zinc-500 animate-pulse'
+                  : isHealthy
+                  ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
+                  : isDegraded
+                  ? 'bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                  : 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]'
               }`}
-            >
-              {agentStatus.has_api_key ? 'Gemini 2.5 Active' : 'Deterministic Fallback Active'}
+            />
+            <span>
+              {!health
+                ? 'Connecting...'
+                : isHealthy
+                ? 'System Operational'
+                : isDegraded
+                ? 'Service Degraded'
+                : 'Service Outage'}
             </span>
+          </div>
+
+          {/* AI Engine Badge */}
+          {agentStatus && (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-400">
+              <Cpu className="h-3.5 w-3.5 text-zinc-400" />
+              <span>
+                {agentStatus.has_api_key ? 'Gemini 2.5 Active' : 'Deterministic Mode'}
+              </span>
+            </div>
           )}
 
+          {/* Refresh Button */}
           <button
             onClick={onRefresh}
             disabled={loading}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700 disabled:opacity-50"
-            title="Refresh System Diagnostics"
+            className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors border border-zinc-800 disabled:opacity-50"
+            title="Refresh status"
           >
-            <svg
-              className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
