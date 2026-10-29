@@ -11,9 +11,13 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.agent.router import router as agent_router
 from app.clinic.router import router as clinic_router
 from app.diagnostics.router import router as diagnostics_router
+from app.evaluation.router import router as evaluation_router
+from app.recovery.router import router as recovery_router
 from app.simulator.router import router as simulator_router
+from app.workflow.router import router as workflow_router
 
 # Configure structured logging for the whole app
 logging.basicConfig(
@@ -25,7 +29,7 @@ logging.basicConfig(
 app = FastAPI(
     title="CivicShield",
     description="Safety-governed agentic AI for simulated clinic incident response",
-    version="0.3.0",
+    version="0.7.0",
 )
 
 # Allow the React dev server (port 5173) to call our API without CORS errors.
@@ -40,6 +44,10 @@ app.add_middleware(
 app.include_router(clinic_router)
 app.include_router(simulator_router)
 app.include_router(diagnostics_router)
+app.include_router(recovery_router)
+app.include_router(agent_router)
+app.include_router(workflow_router)
+app.include_router(evaluation_router)
 
 
 @app.get("/health")
