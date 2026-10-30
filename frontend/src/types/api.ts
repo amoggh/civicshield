@@ -133,9 +133,39 @@ export interface VerificationResult {
 
 export type AutonomyMode = 'shadow' | 'supervised' | 'autonomous';
 
+export interface DiagnosticAnalysis {
+  suspected_component: string;
+  failure_mode: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | string;
+  hypothesis: string;
+  evidence_summary: string[];
+  confidence_score: number;
+  recommend_recovery: boolean;
+  source: string;
+  analyzed_at: string;
+}
+
+export interface ExecutionEvent {
+  event_id: string;
+  run_id: string;
+  seq: number;
+  timestamp: string;
+  node: string;
+  agent_id: string;
+  agent_type: 'ai_agent' | 'deterministic_guardrail' | 'deterministic_tool' | 'workflow_controller' | 'human_operator' | string;
+  event_type: 'node_start' | 'node_complete' | 'agent_handoff' | 'tool_call' | 'safety_evaluation' | 'human_review' | 'workflow_escalate' | string;
+  status: 'success' | 'failed' | 'blocked' | 'paused' | 'escalated' | string;
+  input_summary: string;
+  output_summary: string;
+  structured_payload: Record<string, unknown>;
+  handoff_to: string | null;
+  duration_ms: number | null;
+  error_detail: string | null;
+}
+
 export interface WorkflowTimelineEvent {
   timestamp: string;
-  stage: 'INTAKE' | 'DIAGNOSE' | 'PLAN' | 'SAFETY_CHECK' | 'EXECUTE' | 'VERIFY' | 'ESCALATE' | 'SHADOW_CHECK' | 'SUPERVISED_GATE' | 'SUPERVISED_APPROVAL' | 'SUPERVISED_REJECTION';
+  stage: 'INTAKE' | 'DIAGNOSE' | 'ANALYZE' | 'PLAN' | 'SAFETY_CHECK' | 'EXECUTE' | 'VERIFY' | 'ESCALATE' | 'SHADOW_CHECK' | 'SUPERVISED_GATE' | 'SUPERVISED_APPROVAL' | 'SUPERVISED_REJECTION' | string;
   summary: string;
   details: Record<string, unknown>;
 }
@@ -146,12 +176,14 @@ export interface WorkflowRunResponse {
   incident_description: string;
   attempt_count: number;
   hypothesis: string;
+  diagnostic_analysis?: DiagnosticAnalysis | null;
   planner_recommendation: PlannerRecommendation | null;
   proposed_action?: ActionProposal | null;
   governor_decision: GovernorDecision | null;
   execution_result: ExecutionResult | null;
   verification_result: VerificationResult | null;
   timeline: WorkflowTimelineEvent[];
+  events?: ExecutionEvent[];
   completed_at: string;
   awaiting_approval?: boolean;
   human_approved?: boolean | null;

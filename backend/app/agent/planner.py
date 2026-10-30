@@ -1,9 +1,10 @@
 """
-LLM Investigator and Repair Planner.
+LLM Investigator and Recovery Planner.
 
-Interfaces with Google Gemini via langchain-google-genai to analyze diagnostic
-evidence and produce typed PlannerRecommendations. Gracefully handles missing keys,
-timeouts, and model failures by falling back to the DeterministicFallbackPlanner.
+Interfaces with Google Gemini via langchain-google-genai to synthesize
+diagnostic evidence and analyst findings into typed PlannerRecommendations.
+Gracefully handles missing keys, timeouts, and model failures by falling back
+to the DeterministicFallbackPlanner.
 """
 
 from datetime import datetime, timezone
@@ -18,13 +19,18 @@ from app.diagnostics.models import DiagnosticReport
 from app.diagnostics.tools import run_all_diagnostics
 from app.recovery.models import ALLOWED_RECOVERY_ACTIONS
 
+from .analyst import diagnostic_analyst
 from .fallback import fallback_planner
 from .models import (
     AgentStatusResponse,
+    DiagnosticAnalysis,
     DiagnosticToolName,
     PlannerRecommendation,
 )
-from .prompts import HUMAN_PROMPT_TEMPLATE, SYSTEM_PROMPT
+from .prompts import (
+    PLANNER_HUMAN_PROMPT_TEMPLATE,
+    PLANNER_SYSTEM_PROMPT,
+)
 
 logger = logging.getLogger("civicshield.agent.planner")
 
@@ -42,7 +48,7 @@ else:
 
 class InvestigationPlanner:
     """
-    Hybrid Agentic Planner.
+    Hybrid Agentic Recovery Planner.
     Attempts live Gemini analysis when configured; automatically falls back
     to deterministic rules if the API key is missing or an error occurs.
     """
@@ -64,10 +70,11 @@ class InvestigationPlanner:
     def plan(
         self,
         report: DiagnosticReport | None = None,
+        analysis: DiagnosticAnalysis | None = None,
         force_fallback: bool = False,
     ) -> PlannerRecommendation:
         """
-        Analyze current diagnostic evidence and generate a recommendation.
+        Analyze current diagnostic evidence and analyst findings to generate a recovery recommendation.
         If live model is unavailable or force_fallback is True, uses deterministic fallback.
         """
         if report is None:
@@ -78,7 +85,11 @@ class InvestigationPlanner:
         # Route to Fallback if no valid key is present or forced
         if force_fallback or not api_key:
             logger.info("Engaging deterministic fallback planner (force_fallback=%s, has_key=%s)", force_fallback, bool(api_key))
-            return fallback_planner.plan(report)
+            return fallback_planner.plan(report=report, analysis=analysis)
+
+        # Ensure we have analytical findings for the prompt
+        if analysis is None:
+            analysis = diagnostic_analyst.analyze(report=report, force_fallback=False)
 
         # Attempt live Gemini model call
         try:
@@ -96,11 +107,22 @@ class InvestigationPlanner:
 
             summary_text = report.model_dump_json(indent=2)
             messages = [
-                SystemMessage(content=SYSTEM_PROMPT),
-                HumanMessage(content=HUMAN_PROMPT_TEMPLATE.format(diagnostic_summary=summary_text)),
+                SystemMessage(content=PLANNER_SYSTEM_PROMPT),
+                HumanMessage(
+                    content=PLANNER_HUMAN_PROMPT_TEMPLATE.format(
+                        suspected_component=analysis.suspected_component,
+                        failure_mode=analysis.failure_mode,
+                        severity=analysis.severity,
+                        analyst_hypothesis=analysis.hypothesis,
+                        evidence_summary=", ".join(analysis.evidence_summary),
+                        confidence_score=analysis.confidence_score,
+                        recommend_recovery=analysis.recommend_recovery,
+                        diagnostic_summary=summary_text,
+                    )
+                ),
             ]
 
-            logger.info("Invoking Gemini model '%s' for diagnostic analysis...", self.model_name)
+            logger.info("Invoking Gemini model '%s' for recovery planning...", self.model_name)
             result: PlannerRecommendation = structured_llm.invoke(messages)
 
             # Ensure metadata fields are cleanly populated
@@ -122,7 +144,7 @@ class InvestigationPlanner:
                 type(e).__name__,
                 str(e),
             )
-            fallback_rec = fallback_planner.plan(report)
+            fallback_rec = fallback_planner.plan(report=report, analysis=analysis)
             fallback_rec.source = f"DETERMINISTIC_FALLBACK ({type(e).__name__})"
             fallback_rec.rationale += (
                 f" [Note: Live model call failed ({type(e).__name__}); deterministic fallback engaged.]"
@@ -143,4 +165,3 @@ class InvestigationPlanner:
 
 # Global singleton planner instance
 investigation_planner = InvestigationPlanner()
-

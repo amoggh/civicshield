@@ -1,6 +1,7 @@
 """
 FastAPI router for triggering, resuming, and inspecting the LangGraph workflow.
 Supports Shadow Mode, Supervised Mode (Human-in-the-Loop), and Autonomous Mode.
+Provides real-time event telemetry for the Multi-Agent Collaboration Trace.
 """
 
 from datetime import datetime, timezone
@@ -37,6 +38,7 @@ def run_incident_response_workflow(req: WorkflowRunRequest):
         "attempt_count": 1,
         "max_attempts": req.max_attempts,
         "timeline": [],
+        "events": [],
         "awaiting_approval": False,
     }
 
@@ -57,12 +59,14 @@ def run_incident_response_workflow(req: WorkflowRunRequest):
         incident_description=final_state.get("incident_description", req.incident_description),
         attempt_count=final_state.get("attempt_count", 1),
         hypothesis=final_state.get("hypothesis", ""),
+        diagnostic_analysis=final_state.get("diagnostic_analysis"),
         planner_recommendation=final_state.get("planner_recommendation"),
         proposed_action=final_state.get("proposed_action"),
         governor_decision=final_state.get("governor_decision"),
         execution_result=final_state.get("execution_result"),
         verification_result=final_state.get("verification_result"),
         timeline=final_state.get("timeline", []),
+        events=final_state.get("events", []),
         completed_at=datetime.now(timezone.utc),
         awaiting_approval=final_state.get("awaiting_approval", False),
         human_approved=final_state.get("human_approved"),
@@ -95,12 +99,14 @@ def resume_workflow_execution(req: WorkflowResumeRequest):
         incident_description=resumed_state.get("incident_description", "Supervised incident response"),
         attempt_count=resumed_state.get("attempt_count", 1),
         hypothesis=resumed_state.get("hypothesis", ""),
+        diagnostic_analysis=resumed_state.get("diagnostic_analysis"),
         planner_recommendation=resumed_state.get("planner_recommendation"),
         proposed_action=resumed_state.get("proposed_action"),
         governor_decision=resumed_state.get("governor_decision"),
         execution_result=resumed_state.get("execution_result"),
         verification_result=resumed_state.get("verification_result"),
         timeline=resumed_state.get("timeline", []),
+        events=resumed_state.get("events", []),
         completed_at=datetime.now(timezone.utc),
         awaiting_approval=False,
         human_approved=resumed_state.get("human_approved"),

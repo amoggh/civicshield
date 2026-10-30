@@ -1,12 +1,14 @@
 """
 LangGraph compilation for CivicShield Incident Response Workflow.
 Supports Shadow Mode, Supervised Mode, and Autonomous Mode.
+Coordinates collaboration between Diagnostic Analyst, Recovery Planner, and Safety Governor.
 """
 
 from langgraph.graph import END, START, StateGraph
 
 from .edges import route_after_plan, route_after_safety, route_after_verify
 from .nodes import (
+    analyze_node,
     await_approval_node,
     diagnose_node,
     escalate_node,
@@ -27,6 +29,7 @@ def build_civicshield_graph():
     # 1. Register Nodes
     builder.add_node("intake", intake_node)
     builder.add_node("diagnose", diagnose_node)
+    builder.add_node("analyze", analyze_node)
     builder.add_node("plan", plan_node)
     builder.add_node("safety_gate", safety_gate_node)
     builder.add_node("shadow", shadow_node)
@@ -38,7 +41,8 @@ def build_civicshield_graph():
     # 2. Sequential Edges
     builder.add_edge(START, "intake")
     builder.add_edge("intake", "diagnose")
-    builder.add_edge("diagnose", "plan")
+    builder.add_edge("diagnose", "analyze")
+    builder.add_edge("analyze", "plan")
     builder.add_edge("execute", "verify")
     builder.add_edge("shadow", END)
     builder.add_edge("await_approval", END)

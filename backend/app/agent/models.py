@@ -78,6 +78,49 @@ class PlannerRecommendation(BaseModel):
     )
 
 
+class DiagnosticAnalysis(BaseModel):
+    """
+    Structured analytical output produced by the Diagnostic Analyst agent.
+    Synthesizes raw diagnostic telemetry into a grounded failure hypothesis.
+    """
+    suspected_component: str = Field(
+        description="The architectural component suspected of failure (e.g. database, configuration, network, service_core)"
+    )
+    failure_mode: str = Field(
+        description="Identified failure pattern (e.g. invalid_host_config, pool_exhaustion, latency_spike, healthy, adversarial_injection)"
+    )
+    severity: str = Field(
+        default="HIGH",
+        description="Assessed severity level: LOW, MEDIUM, HIGH, CRITICAL",
+    )
+    hypothesis: str = Field(
+        description="Analytical hypothesis explaining the root cause based on evidence tokens",
+        min_length=1,
+        max_length=500,
+    )
+    evidence_summary: list[str] = Field(
+        default_factory=list,
+        description="Key diagnostic evidence facts or log snippets supporting the diagnosis",
+    )
+    confidence_score: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Analyst confidence in root-cause determination",
+    )
+    recommend_recovery: bool = Field(
+        default=True,
+        description="Whether evidence warrants proceeding to automated recovery planning",
+    )
+    source: str = Field(
+        default="DETERMINISTIC_FALLBACK",
+        description="Origin of this diagnosis: GEMINI_MODEL or DETERMINISTIC_FALLBACK",
+    )
+    analyzed_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Timestamp when diagnosis was completed",
+    )
+
+
 class AgentStatusResponse(BaseModel):
     """Runtime configuration status of the AI agent."""
     model_config = {"protected_namespaces": ()}

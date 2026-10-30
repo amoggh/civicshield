@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from './api/client';
 import { BenchmarkCard } from './components/BenchmarkCard';
+import { CollaborationTraceView } from './components/CollaborationTraceView';
 import { ControlPanel } from './components/ControlPanel';
 import { DiagnosticsRibbon } from './components/DiagnosticsRibbon';
 import { Header } from './components/Header';
@@ -8,7 +9,7 @@ import { HypothesisCard } from './components/HypothesisCard';
 import { SafetyGovernorCard } from './components/SafetyGovernorCard';
 import { TimelineCard } from './components/TimelineCard';
 import { VerificationCard } from './components/VerificationCard';
-import { Sparkles, Terminal, BarChart3, AlertCircle } from 'lucide-react';
+import { Sparkles, Terminal, BarChart3, AlertCircle, Bot } from 'lucide-react';
 import type {
   AgentStatusResponse,
   AutonomyMode,
@@ -18,7 +19,7 @@ import type {
   WorkflowRunResponse,
 } from './types/api';
 
-type TabType = 'pipeline' | 'timeline' | 'benchmark';
+type TabType = 'pipeline' | 'timeline' | 'trace' | 'benchmark';
 
 function App() {
   const [health, setHealth] = useState<ClinicHealthResponse | null>(null);
@@ -223,6 +224,23 @@ function App() {
             </button>
 
             <button
+              onClick={() => setActiveTab('trace')}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-all ${
+                activeTab === 'trace'
+                  ? 'bg-zinc-100 text-zinc-950 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <Bot className="h-3.5 w-3.5" />
+              <span>Agent Collaboration Trace</span>
+              {workflowResult?.events && workflowResult.events.length > 0 && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-sky-950 text-sky-400 border border-sky-800">
+                  {workflowResult.events.length}
+                </span>
+              )}
+            </button>
+
+            <button
               onClick={() => setActiveTab('benchmark')}
               className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-all ${
                 activeTab === 'benchmark'
@@ -277,7 +295,18 @@ function App() {
           </div>
         )}
 
-        {/* Tab 3: Evaluation Benchmark */}
+        {/* Tab 3: Multi-Agent Collaboration Trace */}
+        {activeTab === 'trace' && (
+          <div>
+            <CollaborationTraceView
+              events={workflowResult?.events ?? []}
+              autonomyMode={workflowResult?.autonomy_mode ?? autonomyMode}
+              workflowStatus={workflowResult?.status ?? 'IDLE'}
+            />
+          </div>
+        )}
+
+        {/* Tab 4: Evaluation Benchmark */}
         {activeTab === 'benchmark' && (
           <div>
             <BenchmarkCard

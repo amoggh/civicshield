@@ -9,7 +9,7 @@ from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
-from app.agent.models import PlannerRecommendation
+from app.agent.models import DiagnosticAnalysis, PlannerRecommendation
 from app.diagnostics.models import DiagnosticReport
 from app.recovery.models import (
     ActionProposal,
@@ -26,14 +26,56 @@ class AutonomyMode(str, Enum):
     AUTONOMOUS = "autonomous"  # Automatically execute safe, allowlisted repairs
 
 
+class ExecutionEvent(BaseModel):
+    """
+    Detailed telemetry event capturing agent interactions, tool calls, and control flow.
+    Enables deep inspection and visualization of multi-agent collaboration.
+    """
+    event_id: str = Field(description="Unique event ID")
+    run_id: str = Field(description="Workflow execution run ID")
+    seq: int = Field(description="Monotonically increasing sequence number")
+    timestamp: str = Field(description="ISO 8601 UTC timestamp")
+    node: str = Field(description="LangGraph workflow node name")
+    agent_id: str = Field(description="Identifier for the agent or component (e.g. diagnostic_analyst, recovery_planner, safety_governor)")
+    agent_type: str = Field(
+        description="Type classification: 'ai_agent' | 'deterministic_guardrail' | 'deterministic_tool' | 'workflow_controller' | 'human_operator'"
+    )
+    event_type: str = Field(
+        description="Event kind: 'node_start' | 'node_complete' | 'agent_handoff' | 'tool_call' | 'safety_evaluation' | 'human_review' | 'workflow_escalate'"
+    )
+    status: str = Field(
+        description="Execution status: 'success' | 'failed' | 'blocked' | 'paused' | 'escalated'"
+    )
+    input_summary: str = Field(description="Summary of input received by this component")
+    output_summary: str = Field(description="Summary of output or decision produced")
+    structured_payload: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Complete typed payload produced for deep inspection",
+    )
+    handoff_to: str | None = Field(
+        default=None,
+        description="Target agent or node for state handoff",
+    )
+    duration_ms: float | None = Field(
+        default=None,
+        description="Execution time in milliseconds",
+    )
+    error_detail: str | None = Field(
+        default=None,
+        description="Error or rejection detail if applicable",
+    )
+
+
 class CivicShieldState(TypedDict, total=False):
     """
     Central state container passed between LangGraph nodes.
     Maintains an immutable record of evidence, hypotheses, decisions, and attempts.
     """
+    run_id: str
     incident_description: str
     autonomy_mode: str
     evidence: DiagnosticReport | None
+    diagnostic_analysis: DiagnosticAnalysis | None
     hypothesis: str
     planner_recommendation: PlannerRecommendation | None
     proposed_action: ActionProposal | None
@@ -44,6 +86,7 @@ class CivicShieldState(TypedDict, total=False):
     max_attempts: int
     status: str
     timeline: list[dict[str, Any]]
+    events: list[ExecutionEvent]
     error_message: str | None
     force_fallback: bool
     awaiting_approval: bool
@@ -96,12 +139,14 @@ class WorkflowRunResponse(BaseModel):
     incident_description: str
     attempt_count: int
     hypothesis: str
+    diagnostic_analysis: DiagnosticAnalysis | None = None
     planner_recommendation: PlannerRecommendation | None
     proposed_action: ActionProposal | None = None
     governor_decision: GovernorDecision | None
     execution_result: ExecutionResult | None
     verification_result: VerificationResult | None
     timeline: list[dict[str, Any]]
+    events: list[ExecutionEvent] = Field(default_factory=list)
     completed_at: datetime
     awaiting_approval: bool = False
     human_approved: bool | None = None
